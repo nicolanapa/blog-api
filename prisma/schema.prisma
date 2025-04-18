@@ -25,8 +25,8 @@ model Post {
 
     title           String
     content         String
-    publishmentDate DateTime
-    isPublised      Boolean
+    publishDate DateTime
+    isPublished      Boolean
 
     comments Comment[]
 }
@@ -39,7 +39,7 @@ model Comment {
     postId Int
 
     content         String
-    publishmentDate DateTime
+    publishDate DateTime
 }
 
 enum TypeOfUser {
