@@ -2,6 +2,7 @@ import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import process from "process";
 import prisma from "../db/prisma.js";
+import * as argon2 from "argon2";
 
 const userCredentials = [
     body("username")
@@ -33,22 +34,48 @@ userRouter.post("/", userCredentials, async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        res.status(400).json(errors);
+        return res.status(400).json(errors);
     }
 
     console.log(req.body);
+
+    if (
+        (await prisma.user.findUnique({
+            where: {
+                username: req.body.username,
+            },
+        })) !== null
+    ) {
+        return res.status(409).json({ errors: "User already exists" });
+    }
+
+    let typeOfUser = "";
 
     if (req.body.blogAuthorSecretKey) {
         if (
             req.body.blogAuthorSecretKey === process.env.BLOG_AUTHOR_SECRET_KEY
         ) {
-            // Create blogAuthor User
+            typeOfUser = "blogAuthor";
         } else {
-            res.status(503).json({ errors: "Wrong Secret Key" });
+            return res.status(503).json({ errors: "Wrong Secret Key" });
         }
     } else {
-        // Create normalUser User
+        typeOfUser = "normalUser";
     }
+
+    const hashedPassword = await argon2.hash(req.body.password);
+
+    await prisma.user.create({
+        data: {
+            username: req.body.username,
+            hashedPassword: hashedPassword,
+            type: typeOfUser,
+        },
+    });
+
+    // Return a JWT
+    // Or redirect to /login with the needed credentials
+    res.status(200).json();
 });
 
 export default userRouter;
