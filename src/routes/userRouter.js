@@ -110,7 +110,32 @@ userRouter.delete(
     "/:id",
     passport.authenticate("jwt", { session: false }),
     async (req, res) => {
-        console.log(req.isAuthenticated(), req.user);
+        let authorizationToDelete = false;
+
+        if (
+            req.user.type === "normalUser" &&
+            parseInt(req.params.id) === parseInt(req.user.id)
+        ) {
+            authorizationToDelete = true;
+        } else if (req.user.type === "blogAuthor") {
+            authorizationToDelete = true;
+        }
+
+        if (authorizationToDelete) {
+            await prisma.user.delete({
+                where: {
+                    id: parseInt(req.params.id),
+                },
+            });
+
+            return res
+                .status(200)
+                .json({ status: "User successfully deleted" });
+        }
+
+        return res.status(403).json({
+            errors: "You don't have proper authorization to delete the given User",
+        });
     },
 );
 
