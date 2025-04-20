@@ -10,7 +10,7 @@ datasource db {
 
 model User {
     id             Int        @id @default(autoincrement())
-    username       String
+    username       String     @unique
     hashedPassword String
     type           TypeOfUser @default(normalUser)
 
