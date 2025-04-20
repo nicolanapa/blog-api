@@ -3,6 +3,7 @@ import process from "process";
 import userRouter from "./routes/userRouter.js";
 import postRouter from "./routes/postRouter.js";
 import commentRouter from "./routes/commentRouter.js";
+import loginRouter from "./routes/loginRouter.js";
 
 // passport strategy to be defined in ./db/passport.js
 
@@ -21,5 +22,7 @@ app.use("/user", userRouter);
 app.use("/post", postRouter);
 
 app.use("/comment", commentRouter);
+
+app.use("/login", loginRouter);
 
 app.listen(PORT);
