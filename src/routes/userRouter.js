@@ -78,4 +78,49 @@ userRouter.post("/", userCredentials, async (req, res) => {
     res.status(200).json();
 });
 
+// Check :id Type
+userRouter.get("/:id", async (req, res) => {
+    const user = await prisma.user.findUnique({
+        where: {
+            id: parseInt(req.params.id),
+        },
+        select: {
+            id: true,
+            username: true,
+            hashedPassword: false,
+            type: true,
+        },
+    });
+
+    return res
+        .status(user !== null ? 200 : 404)
+        .json(user !== null ? user : { errors: "User doesn't exist" });
+});
+
+// Middleware needed
+userRouter.put("/:id", async (req, res) => {});
+
+// Middleware needed
+userRouter.delete("/:id", async (req, res) => {});
+
+userRouter.get("/:id/posts", async (req, res) => {
+    const posts = await prisma.post.findMany({
+        where: {
+            userId: parseInt(req.params.id),
+        },
+    });
+
+    return res.status(200).json(posts);
+});
+
+userRouter.get("/:id/comments", async (req, res) => {
+    const comments = await prisma.comment.findMany({
+        where: {
+            userId: parseInt(req.params.id),
+        },
+    });
+
+    return res.status(200).json(comments);
+});
+
 export default userRouter;
