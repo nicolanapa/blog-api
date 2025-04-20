@@ -4,7 +4,6 @@ import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import process from "process";
 import prisma from "../db/prisma.js";
-import * as crypto from "crypto";
 
 const userCredentials = [
     body("username")

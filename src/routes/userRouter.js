@@ -3,6 +3,7 @@ import { body, validationResult } from "express-validator";
 import process from "process";
 import prisma from "../db/prisma.js";
 import * as argon2 from "argon2";
+import passport from "../db/passport.js";
 
 const userCredentials = [
     body("username")
@@ -97,11 +98,21 @@ userRouter.get("/:id", async (req, res) => {
         .json(user !== null ? user : { errors: "User doesn't exist" });
 });
 
-// Middleware needed
-userRouter.put("/:id", async (req, res) => {});
+userRouter.put(
+    "/:id",
+    passport.authenticate("jwt", { session: false }),
+    async (req, res) => {
+        console.log(req.isAuthenticated(), req.user);
+    },
+);
 
-// Middleware needed
-userRouter.delete("/:id", async (req, res) => {});
+userRouter.delete(
+    "/:id",
+    passport.authenticate("jwt", { session: false }),
+    async (req, res) => {
+        console.log(req.isAuthenticated(), req.user);
+    },
+);
 
 userRouter.get("/:id/posts", async (req, res) => {
     const posts = await prisma.post.findMany({
