@@ -48,6 +48,8 @@ loginRouter.post("/", userCredentials, async (req, res) => {
             }),
         });
     }
+
+    return res.status(403).json({ errors: "Wrong username or password" });
 });
 
 export default loginRouter;
