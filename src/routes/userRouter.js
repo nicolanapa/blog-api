@@ -29,7 +29,13 @@ const userCredentials = [
 const userRouter = new Router();
 
 userRouter.get("/", async (req, res) => {
-    return res.json(await prisma.user.findMany());
+    return res.json(
+        await prisma.user.findMany({
+            omit: {
+                hashedPassword: true,
+            },
+        }),
+    );
 });
 
 userRouter.post("/", userCredentials, async (req, res) => {
@@ -86,11 +92,8 @@ userRouter.get("/:id", async (req, res) => {
         where: {
             id: parseInt(req.params.id),
         },
-        select: {
-            id: true,
-            username: true,
-            hashedPassword: false,
-            type: true,
+        omit: {
+            hashedPassword: true,
         },
     });
 

@@ -16,11 +16,8 @@ passport.use(
                     username: jwtPayload.username,
                     type: jwtPayload.type,
                 },
-                select: {
-                    id: true,
-                    username: true,
-                    hashedPassword: false,
-                    type: true,
+                omit: {
+                    hashedPassword: true,
                 },
             });
 
