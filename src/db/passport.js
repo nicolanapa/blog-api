@@ -14,8 +14,13 @@ passport.use(
                 where: {
                     id: jwtPayload.id,
                     username: jwtPayload.username,
-                    hashedPassword: jwtPayload.hashedPassword,
                     type: jwtPayload.type,
+                },
+                select: {
+                    id: true,
+                    username: true,
+                    hashedPassword: false,
+                    type: true,
                 },
             });
 
