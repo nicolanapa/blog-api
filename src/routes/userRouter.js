@@ -4,6 +4,7 @@ import process from "process";
 import prisma from "../db/prisma.js";
 import * as argon2 from "argon2";
 import passport from "../db/passport.js";
+import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 
 const userCredentials = [
     body("username")
@@ -101,6 +102,7 @@ userRouter.get("/:id", async (req, res) => {
 userRouter.put(
     "/:id",
     passport.authenticate("jwt", { session: false }),
+    checkAuthorizationLevel("id", false),
     async (req, res) => {
         console.log(req.isAuthenticated(), req.user);
     },
@@ -109,19 +111,15 @@ userRouter.put(
 userRouter.delete(
     "/:id",
     passport.authenticate("jwt", { session: false }),
+    checkAuthorizationLevel("id", false),
     async (req, res) => {
-        let authorizationToDelete = false;
-
         if (
-            req.user.type === "normalUser" &&
-            parseInt(req.params.id) === parseInt(req.user.id)
+            (await prisma.user.findUnique({
+                where: {
+                    id: parseInt(req.params.id),
+                },
+            })) !== null
         ) {
-            authorizationToDelete = true;
-        } else if (req.user.type === "blogAuthor") {
-            authorizationToDelete = true;
-        }
-
-        if (authorizationToDelete) {
             await prisma.user.delete({
                 where: {
                     id: parseInt(req.params.id),
@@ -133,9 +131,7 @@ userRouter.delete(
                 .json({ status: "User successfully deleted" });
         }
 
-        return res.status(403).json({
-            errors: "You don't have proper authorization to delete the given User",
-        });
+        return res.status(404).json({ status: "User doesn't exist" });
     },
 );
 
