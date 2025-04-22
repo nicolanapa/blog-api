@@ -34,7 +34,7 @@ postRouter.get("/", async (req, res) => {
     return res.status(200).json(
         await prisma.post.findMany({
             where: {
-                isPublished: true,
+                // isPublished: true,
             },
         }),
     );
@@ -69,7 +69,16 @@ postRouter.post(
     },
 );
 
-postRouter.get("/:id", async (req, res) => {});
+postRouter.get("/:id", async (req, res) => {
+    return res.status(200).json(
+        await prisma.post.findMany({
+            where: {
+                id: parseInt(req.params.id),
+                // isPublished: true,
+            },
+        }),
+    );
+});
 
 postRouter.put(
     "/:id",
@@ -85,6 +94,15 @@ postRouter.delete(
     async (req, res) => {},
 );
 
-postRouter.get("/:id/comments", async (req, res) => {});
+postRouter.get("/:id/comments", async (req, res) => {
+    return res.status(200).json(
+        await prisma.comment.findMany({
+            where: {
+                postId: parseInt(req.params.id),
+                // isPublished: true,
+            },
+        }),
+    );
+});
 
 export default postRouter;
