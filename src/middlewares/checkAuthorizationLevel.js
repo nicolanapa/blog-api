@@ -11,7 +11,7 @@ const checkAuthorizationLevel = (idInParams, onlyBlogAuthor) => {
         }
 
         return res.status(403).json({
-            errors: "You don't have proper authorization to delete the given User",
+            errors: "You don't have proper authorization",
         });
     };
 };
