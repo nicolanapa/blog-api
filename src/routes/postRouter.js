@@ -91,7 +91,33 @@ postRouter.delete(
     "/:id",
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
-    async (req, res) => {},
+    async (req, res) => {
+        if (
+            await prisma.post.findUnique({
+                where: {
+                    id: parseInt(req.params.id),
+                },
+            })
+        ) {
+            await prisma.comment.deleteMany({
+                where: {
+                    postId: parseInt(req.params.id),
+                },
+            });
+
+            await prisma.post.delete({
+                where: {
+                    id: parseInt(req.params.id),
+                },
+            });
+
+            return res
+                .status(200)
+                .json({ status: "Post deleted successfully" });
+        }
+
+        return res.status(404).json({ status: "Post doesn't exist" });
+    },
 );
 
 postRouter.get("/:id/comments", async (req, res) => {
