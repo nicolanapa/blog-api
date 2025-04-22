@@ -81,9 +81,37 @@ userRouter.post("/", userCredentials, async (req, res) => {
         },
     });
 
-    // Return a JWT
-    // Or redirect to /login with the needed credentials
-    res.status(200).json();
+    return await fetch(
+        (process.env.SECURE_CONNECTION === "true" ? "https" : "http") +
+            "://" +
+            process.env.IP +
+            ":" +
+            process.env.PORT +
+            "/login",
+        {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                username: req.body.username,
+                password: req.body.password,
+            }),
+        },
+    )
+        .then((res) => res.json())
+        .then((response) =>
+            res.status(200).json({
+                status: "User successfully created",
+                jwt: response.jwt,
+            }),
+        )
+        .catch((error) =>
+            res.status(200).json({
+                status: "User successfully created",
+            }),
+        );
 });
 
 // Check :id Type
