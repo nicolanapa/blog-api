@@ -25,7 +25,7 @@ model Post {
 
     title       String
     content     String
-    publishDate DateTime
+    publishDate DateTime @default(now())
     isPublished Boolean
 
     comments Comment[]
