@@ -39,7 +39,7 @@ model Comment {
     postId Int
 
     content     String
-    publishDate DateTime
+    publishDate DateTime @default(now())
 }
 
 enum TypeOfUser {
