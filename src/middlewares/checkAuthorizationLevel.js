@@ -1,5 +1,29 @@
-const checkAuthorizationLevel = (idInParams, onlyBlogAuthor) => {
-    return (req, res, next) => {
+import prisma from "../db/prisma.js";
+
+const checkAuthorizationLevel = (
+    idInParams,
+    onlyBlogAuthor,
+    otherTypeOfModel = "",
+) => {
+    return async (req, res, next) => {
+        if (otherTypeOfModel !== "") {
+            if (
+                otherTypeOfModel === "Comment" &&
+                !onlyBlogAuthor &&
+                req.user.type === "normalUser"
+            ) {
+                const comment = await prisma.comment.findUnique({
+                    where: {
+                        id: parseInt(req.params[idInParams]),
+                    },
+                });
+
+                if (comment.userId === parseInt(req.user.id)) {
+                    return next();
+                }
+            }
+        }
+
         if (
             !onlyBlogAuthor &&
             req.user.type === "normalUser" &&
