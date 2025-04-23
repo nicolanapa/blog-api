@@ -57,7 +57,17 @@ commentRouter.post(
     },
 );
 
-commentRouter.get("/:id", async (req, res) => {});
+commentRouter.get("/:id", async (req, res) => {
+    const comment = await prisma.comment.findUnique({
+        where: {
+            id: parseInt(req.params.id),
+        },
+    });
+
+    return res
+        .status(comment !== null ? 200 : 404)
+        .json(comment !== null ? comment : { errors: "Comment doesn't exist" });
+});
 
 commentRouter.put(
     "/:id",
