@@ -70,14 +70,15 @@ postRouter.post(
 );
 
 postRouter.get("/:id", async (req, res) => {
-    return res.status(200).json(
-        await prisma.post.findMany({
-            where: {
-                id: parseInt(req.params.id),
-                // isPublished: true,
-            },
-        }),
-    );
+    const post = await prisma.post.findUnique({
+        where: {
+            id: parseInt(req.params.id),
+        },
+    });
+
+    return res
+        .status(post !== null ? 200 : 404)
+        .json(post !== null ? post : { errors: "Post doesn't exist" });
 });
 
 postRouter.put(
