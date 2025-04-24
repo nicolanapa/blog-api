@@ -4,6 +4,7 @@ import passport from "../db/passport.js";
 import { body } from "express-validator";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 import checkValidationResult from "../middlewares/checkValidationResult.js";
+import checkIdType from "../middlewares/checkIdType.js";
 
 const commentValidation = body("content")
     .trim()
@@ -21,6 +22,7 @@ commentRouter.get("/", async (req, res) => {
 
 commentRouter.post(
     "/:postId",
+    checkIdType("postId"),
     passport.authenticate("jwt", { session: false }),
     commentValidation,
     checkValidationResult,
@@ -53,7 +55,7 @@ commentRouter.post(
     },
 );
 
-commentRouter.get("/:id", async (req, res) => {
+commentRouter.get("/:id", checkIdType(), async (req, res) => {
     const comment = await prisma.comment.findUnique({
         where: {
             id: parseInt(req.params.id),
@@ -67,6 +69,7 @@ commentRouter.get("/:id", async (req, res) => {
 
 commentRouter.put(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false, "Comment"),
     commentValidation,
@@ -98,6 +101,7 @@ commentRouter.put(
 
 commentRouter.delete(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false, "Comment"),
     async (req, res) => {

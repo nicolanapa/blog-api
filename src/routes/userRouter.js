@@ -6,6 +6,7 @@ import * as argon2 from "argon2";
 import passport from "../db/passport.js";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 import checkValidationResult from "../middlewares/checkValidationResult.js";
+import checkIdType from "../middlewares/checkIdType.js";
 
 const userCredentials = [
     body("username")
@@ -120,8 +121,7 @@ userRouter.post(
     },
 );
 
-// Check :id Type
-userRouter.get("/:id", async (req, res) => {
+userRouter.get("/:id", checkIdType(), async (req, res) => {
     const user = await prisma.user.findUnique({
         where: {
             id: parseInt(req.params.id),
@@ -138,6 +138,7 @@ userRouter.get("/:id", async (req, res) => {
 
 userRouter.put(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false),
     userCredentials,
@@ -192,6 +193,7 @@ userRouter.put(
 
 userRouter.delete(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false),
     async (req, res) => {
@@ -229,7 +231,7 @@ userRouter.delete(
     },
 );
 
-userRouter.get("/:id/posts", async (req, res) => {
+userRouter.get("/:id/posts", checkIdType(), async (req, res) => {
     const posts = await prisma.post.findMany({
         where: {
             userId: parseInt(req.params.id),
@@ -239,7 +241,7 @@ userRouter.get("/:id/posts", async (req, res) => {
     return res.status(200).json(posts);
 });
 
-userRouter.get("/:id/comments", async (req, res) => {
+userRouter.get("/:id/comments", checkIdType(), async (req, res) => {
     const comments = await prisma.comment.findMany({
         where: {
             userId: parseInt(req.params.id),

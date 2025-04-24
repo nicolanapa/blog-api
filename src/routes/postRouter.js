@@ -4,6 +4,7 @@ import passport from "../db/passport.js";
 import { body } from "express-validator";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 import checkValidationResult from "../middlewares/checkValidationResult.js";
+import checkIdType from "../middlewares/checkIdType.js";
 
 const postForm = [
     body("title")
@@ -61,7 +62,7 @@ postRouter.post(
     },
 );
 
-postRouter.get("/:id", async (req, res) => {
+postRouter.get("/:id", checkIdType(), async (req, res) => {
     const post = await prisma.post.findUnique({
         where: {
             id: parseInt(req.params.id),
@@ -75,6 +76,7 @@ postRouter.get("/:id", async (req, res) => {
 
 postRouter.put(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
     postForm,
@@ -107,6 +109,7 @@ postRouter.put(
 
 postRouter.delete(
     "/:id",
+    checkIdType(),
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
     async (req, res) => {
@@ -138,7 +141,7 @@ postRouter.delete(
     },
 );
 
-postRouter.get("/:id/comments", async (req, res) => {
+postRouter.get("/:id/comments", checkIdType(), async (req, res) => {
     return res.status(200).json(
         await prisma.comment.findMany({
             where: {
