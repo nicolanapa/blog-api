@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { body, validationResult } from "express-validator";
+import { body } from "express-validator";
 import process from "process";
 import prisma from "../db/prisma.js";
 import * as argon2 from "argon2";
 import passport from "../db/passport.js";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
+import checkValidationResult from "../middlewares/checkValidationResult.js";
 
 const userCredentials = [
     body("username")
@@ -54,73 +55,70 @@ userRouter.get("/", async (req, res) => {
     );
 });
 
-userRouter.post("/", userCredentials, async (req, res) => {
-    const errors = validationResult(req);
+userRouter.post(
+    "/",
+    userCredentials,
+    checkValidationResult,
+    async (req, res) => {
+        if (
+            (await prisma.user.findUnique({
+                where: {
+                    username: req.body.username,
+                },
+            })) !== null
+        ) {
+            return res.status(409).json({ errors: "User already exists" });
+        }
 
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errors);
-    }
+        let typeOfUser = returnTypeOfUser(req.body.blogAuthorSecretKey);
 
-    console.log(req.body);
+        if (typeOfUser === 503) {
+            return res.status(503).json({ errors: "Wrong Secret Key" });
+        }
 
-    if (
-        (await prisma.user.findUnique({
-            where: {
+        const hashedPassword = await argon2.hash(req.body.password);
+
+        await prisma.user.create({
+            data: {
                 username: req.body.username,
+                hashedPassword: hashedPassword,
+                type: typeOfUser,
             },
-        })) !== null
-    ) {
-        return res.status(409).json({ errors: "User already exists" });
-    }
+        });
 
-    let typeOfUser = returnTypeOfUser(req.body.blogAuthorSecretKey);
-
-    if (typeOfUser === 503) {
-        return res.status(503).json({ errors: "Wrong Secret Key" });
-    }
-
-    const hashedPassword = await argon2.hash(req.body.password);
-
-    await prisma.user.create({
-        data: {
-            username: req.body.username,
-            hashedPassword: hashedPassword,
-            type: typeOfUser,
-        },
-    });
-
-    return await fetch(
-        (process.env.SECURE_CONNECTION === "true" ? "https" : "http") +
-            "://" +
-            process.env.IP +
-            ":" +
-            process.env.PORT +
-            "/login",
-        {
-            method: "POST",
-            mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
+        return await fetch(
+            (process.env.SECURE_CONNECTION === "true" ? "https" : "http") +
+                "://" +
+                process.env.IP +
+                ":" +
+                process.env.PORT +
+                "/login",
+            {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: req.body.username,
+                    password: req.body.password,
+                }),
             },
-            body: JSON.stringify({
-                username: req.body.username,
-                password: req.body.password,
-            }),
-        },
-    )
-        .then((res) => res.json())
-        .then((response) =>
-            res.status(200).json({
-                status: "User successfully created",
-                jwt: response.jwt,
-            }),
         )
-        .catch(() =>
-            res.status(200).json({
-                status: "User successfully created",
-            }),
-        );
-});
+            .then((res) => res.json())
+            .then((response) =>
+                res.status(200).json({
+                    status: "User successfully created",
+                    jwt: response.jwt,
+                }),
+            )
+            .catch(() =>
+                res.status(200).json({
+                    status: "User successfully created",
+                }),
+            );
+    },
+);
 
 // Check :id Type
 userRouter.get("/:id", async (req, res) => {
@@ -143,13 +141,8 @@ userRouter.put(
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false),
     userCredentials,
+    checkValidationResult,
     async (req, res) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors);
-        }
-
         const originalUser = await prisma.user.findUnique({
             where: {
                 id: parseInt(req.params.id),

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import prisma from "../db/prisma.js";
 import passport from "../db/passport.js";
-import { body, validationResult } from "express-validator";
+import { body } from "express-validator";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
+import checkValidationResult from "../middlewares/checkValidationResult.js";
 
 const postForm = [
     body("title")
@@ -45,17 +46,8 @@ postRouter.post(
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
     postForm,
+    checkValidationResult,
     async (req, res) => {
-        console.log(1);
-
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors);
-        }
-
-        console.log(req.body);
-
         await prisma.post.create({
             data: {
                 userId: parseInt(req.user.id),
@@ -86,13 +78,8 @@ postRouter.put(
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
     postForm,
+    checkValidationResult,
     async (req, res) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors);
-        }
-
         const post = await prisma.post.findUnique({
             where: {
                 id: parseInt(req.params.id),

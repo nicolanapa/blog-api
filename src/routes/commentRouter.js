@@ -1,8 +1,9 @@
 import { Router } from "express";
 import prisma from "../db/prisma.js";
 import passport from "../db/passport.js";
-import { body, validationResult } from "express-validator";
+import { body } from "express-validator";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
+import checkValidationResult from "../middlewares/checkValidationResult.js";
 
 const commentValidation = body("content")
     .trim()
@@ -22,13 +23,8 @@ commentRouter.post(
     "/:postId",
     passport.authenticate("jwt", { session: false }),
     commentValidation,
+    checkValidationResult,
     async (req, res) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors);
-        }
-
         const post = await prisma.post.findUnique({
             where: {
                 id: parseInt(req.params.postId),
@@ -74,14 +70,8 @@ commentRouter.put(
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false, "Comment"),
     commentValidation,
+    checkValidationResult,
     async (req, res) => {
-        // Refactor the validation of body in a middleware
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors);
-        }
-
         const comment = await prisma.comment.findUnique({
             where: {
                 id: parseInt(req.params.id),
