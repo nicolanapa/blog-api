@@ -26,6 +26,22 @@ const userCredentials = [
         .withMessage("Invalid length of secret key (64 chars length)"),
 ];
 
+const returnTypeOfUser = (blogAuthorSecretKey) => {
+    let typeOfUser = "";
+
+    if (blogAuthorSecretKey) {
+        if (blogAuthorSecretKey === process.env.BLOG_AUTHOR_SECRET_KEY) {
+            typeOfUser = "blogAuthor";
+        } else {
+            return 503;
+        }
+    } else {
+        typeOfUser = "normalUser";
+    }
+
+    return typeOfUser;
+};
+
 const userRouter = new Router();
 
 userRouter.get("/", async (req, res) => {
@@ -57,18 +73,10 @@ userRouter.post("/", userCredentials, async (req, res) => {
         return res.status(409).json({ errors: "User already exists" });
     }
 
-    let typeOfUser = "";
+    let typeOfUser = returnTypeOfUser(req.body.blogAuthorSecretKey);
 
-    if (req.body.blogAuthorSecretKey) {
-        if (
-            req.body.blogAuthorSecretKey === process.env.BLOG_AUTHOR_SECRET_KEY
-        ) {
-            typeOfUser = "blogAuthor";
-        } else {
-            return res.status(503).json({ errors: "Wrong Secret Key" });
-        }
-    } else {
-        typeOfUser = "normalUser";
+    if (typeOfUser === 503) {
+        return res.status(503).json({ errors: "Wrong Secret Key" });
     }
 
     const hashedPassword = await argon2.hash(req.body.password);
@@ -107,7 +115,7 @@ userRouter.post("/", userCredentials, async (req, res) => {
                 jwt: response.jwt,
             }),
         )
-        .catch((error) =>
+        .catch(() =>
             res.status(200).json({
                 status: "User successfully created",
             }),
@@ -134,8 +142,58 @@ userRouter.put(
     "/:id",
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("id", false),
+    userCredentials,
     async (req, res) => {
-        console.log(req.isAuthenticated(), req.user);
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json(errors);
+        }
+
+        const originalUser = await prisma.user.findUnique({
+            where: {
+                id: parseInt(req.params.id),
+            },
+        });
+
+        if (originalUser === null) {
+            return res.status(404).json({ errors: "User doesn't exist" });
+        }
+
+        let typeOfUser = returnTypeOfUser(req.body.blogAuthorSecretKey);
+
+        if (typeOfUser === 503) {
+            return res.status(503).json({ errors: "Wrong Secret Key" });
+        }
+
+        const hashedPassword = await argon2.hash(req.body.password);
+
+        if (originalUser.username !== req.body.username) {
+            const newUser = await prisma.user.findUnique({
+                where: {
+                    username: req.body.username,
+                },
+            });
+
+            if (newUser !== null) {
+                return res.status(409).json({
+                    errors: "User already exists with the wanted username",
+                });
+            }
+        }
+
+        await prisma.user.update({
+            where: {
+                id: parseInt(req.params.id),
+            },
+            data: {
+                username: req.body.username,
+                hashedPassword: hashedPassword,
+                type: typeOfUser,
+            },
+        });
+
+        return res.status(200).json({ status: "User updated successfully" });
     },
 );
 
@@ -151,6 +209,18 @@ userRouter.delete(
                 },
             })) !== null
         ) {
+            await prisma.comment.deleteMany({
+                where: {
+                    userId: parseInt(req.params.id),
+                },
+            });
+
+            await prisma.post.deleteMany({
+                where: {
+                    userId: parseInt(req.params.id),
+                },
+            });
+
             await prisma.user.delete({
                 where: {
                     id: parseInt(req.params.id),
@@ -159,7 +229,7 @@ userRouter.delete(
 
             return res
                 .status(200)
-                .json({ status: "User successfully deleted" });
+                .json({ status: "User deleted successfully" });
         }
 
         return res.status(404).json({ status: "User doesn't exist" });
