@@ -85,7 +85,37 @@ postRouter.put(
     "/:id",
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
-    async (req, res) => {},
+    postForm,
+    async (req, res) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json(errors);
+        }
+
+        const post = await prisma.post.findUnique({
+            where: {
+                id: parseInt(req.params.id),
+            },
+        });
+
+        if (post === null) {
+            return res.status(404).json({ status: "Post doesn't exist" });
+        }
+
+        await prisma.post.update({
+            where: {
+                id: parseInt(req.params.id),
+            },
+            data: {
+                title: req.body.title,
+                content: req.body.content,
+                isPublished: req.body.isPublished,
+            },
+        });
+
+        return res.status(200).json({ status: "Post updated successfully" });
+    },
 );
 
 postRouter.delete(
