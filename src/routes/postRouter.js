@@ -5,6 +5,7 @@ import { body } from "express-validator";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 import checkValidationResult from "../middlewares/checkValidationResult.js";
 import checkIdType from "../middlewares/checkIdType.js";
+import checkIfAnonymousOrUser from "../middlewares/checkIfAnonymousOrUser.js";
 
 const postForm = [
     body("title")
@@ -32,15 +33,14 @@ const postForm = [
 
 const postRouter = new Router();
 
-postRouter.get("/", async (req, res) => {
-    return res.status(200).json(
-        await prisma.post.findMany({
-            where: {
-                // isPublished: true,
-            },
-        }),
-    );
-});
+postRouter.get(
+    "/",
+    passport.authenticate("jwt", { session: false }),
+    checkAuthorizationLevel("", true),
+    async (req, res) => {
+        return res.status(200).json(await prisma.post.findMany());
+    },
+);
 
 postRouter.post(
     "/",
@@ -62,17 +62,60 @@ postRouter.post(
     },
 );
 
-postRouter.get("/:id", checkIdType(), async (req, res) => {
-    const post = await prisma.post.findUnique({
-        where: {
-            id: parseInt(req.params.id),
-        },
-    });
-
-    return res
-        .status(post !== null ? 200 : 404)
-        .json(post !== null ? post : { errors: "Post doesn't exist" });
+postRouter.get("/published", async (req, res) => {
+    return res.status(200).json(
+        await prisma.post.findMany({
+            where: {
+                isPublished: true,
+            },
+        }),
+    );
 });
+
+postRouter.get(
+    "/unpublished",
+    passport.authenticate("jwt", { session: false }),
+    checkAuthorizationLevel("", true),
+    async (req, res) => {
+        return res.status(200).json(
+            await prisma.post.findMany({
+                where: {
+                    isPublished: false,
+                },
+            }),
+        );
+    },
+);
+
+postRouter.get(
+    "/:id",
+    checkIdType(),
+    checkIfAnonymousOrUser,
+    async (req, res) => {
+        console.log(req.user, req.anonymous, req.isAuthenticated());
+
+        let post;
+
+        if (req.anonymous === true || req.user.type === "normalUser") {
+            post = await prisma.post.findUnique({
+                where: {
+                    id: parseInt(req.params.id),
+                    isPublished: true,
+                },
+            });
+        } else {
+            post = await prisma.post.findUnique({
+                where: {
+                    id: parseInt(req.params.id),
+                },
+            });
+        }
+
+        return res
+            .status(post !== null ? 200 : 404)
+            .json(post !== null ? post : { errors: "Post doesn't exist" });
+    },
+);
 
 postRouter.put(
     "/:id",
@@ -146,7 +189,9 @@ postRouter.get("/:id/comments", checkIdType(), async (req, res) => {
         await prisma.comment.findMany({
             where: {
                 postId: parseInt(req.params.id),
-                // isPublished: true,
+                post: {
+                    isPublished: true,
+                },
             },
         }),
     );
