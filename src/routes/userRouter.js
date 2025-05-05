@@ -24,7 +24,7 @@ const userCredentials = [
     body("blogAuthorSecretKey")
         .trim()
         .optional()
-        .isLength({ min: 64, max: 64 })
+        .isLength({ max: 64 })
         .withMessage("Invalid length of secret key (64 chars length)"),
 ];
 
