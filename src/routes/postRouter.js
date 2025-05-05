@@ -92,8 +92,6 @@ postRouter.get(
     checkIdType(),
     checkIfAnonymousOrUser,
     async (req, res) => {
-        console.log(req.user, req.anonymous, req.isAuthenticated());
-
         let post;
 
         if (req.anonymous === true || req.user.type === "normalUser") {
