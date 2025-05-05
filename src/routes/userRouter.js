@@ -7,6 +7,7 @@ import passport from "../db/passport.js";
 import checkAuthorizationLevel from "../middlewares/checkAuthorizationLevel.js";
 import checkValidationResult from "../middlewares/checkValidationResult.js";
 import checkIdType from "../middlewares/checkIdType.js";
+import checkIfAnonymousOrUser from "../middlewares/checkIfAnonymousOrUser.js";
 
 const userCredentials = [
     body("username")
@@ -231,15 +232,31 @@ userRouter.delete(
     },
 );
 
-userRouter.get("/:id/posts", checkIdType(), async (req, res) => {
-    const posts = await prisma.post.findMany({
-        where: {
-            userId: parseInt(req.params.id),
-        },
-    });
+userRouter.get(
+    "/:id/posts",
+    checkIdType(),
+    checkIfAnonymousOrUser,
+    async (req, res) => {
+        let posts;
 
-    return res.status(200).json(posts);
-});
+        if (req.anonymous === true || req.user.type === "normalUser") {
+            posts = await prisma.post.findMany({
+                where: {
+                    userId: parseInt(req.params.id),
+                    isPublished: true,
+                },
+            });
+        } else {
+            posts = await prisma.post.findMany({
+                where: {
+                    userId: parseInt(req.params.id),
+                },
+            });
+        }
+
+        return res.status(200).json(posts);
+    },
+);
 
 userRouter.get("/:id/comments", checkIdType(), async (req, res) => {
     const comments = await prisma.comment.findMany({
