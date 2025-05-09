@@ -42,9 +42,13 @@ loginRouter.post(
             // There needs to be a safer way to do this
             return res.status(200).json({
                 status: "Logged successfully!",
-                jwt: jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-                    expiresIn: "2h",
-                }),
+                jwt: jwt.sign(
+                    { id: user.id, type: user.type },
+                    process.env.JWT_SECRET,
+                    {
+                        expiresIn: "2h",
+                    },
+                ),
             });
         }
 
