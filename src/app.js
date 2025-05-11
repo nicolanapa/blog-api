@@ -9,7 +9,7 @@ import loginRouter from "./routes/loginRouter.js";
 const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN,
+    origin: [process.env.CORS_ORIGIN, process.env.CORS_ORIGIN_2],
     optionsSuccessStatus: 204,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
