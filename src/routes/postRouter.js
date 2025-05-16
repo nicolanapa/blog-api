@@ -38,7 +38,17 @@ postRouter.get(
     passport.authenticate("jwt", { session: false }),
     checkAuthorizationLevel("", true),
     async (req, res) => {
-        return res.status(200).json(await prisma.post.findMany());
+        return res.status(200).json(
+            await prisma.post.findMany({
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
+            }),
+        );
     },
 );
 
@@ -68,6 +78,13 @@ postRouter.get("/published", async (req, res) => {
             where: {
                 isPublished: true,
             },
+            include: {
+                user: {
+                    select: {
+                        username: true,
+                    },
+                },
+            },
         }),
     );
 });
@@ -81,6 +98,13 @@ postRouter.get(
             await prisma.post.findMany({
                 where: {
                     isPublished: false,
+                },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
                 },
             }),
         );
@@ -100,11 +124,25 @@ postRouter.get(
                     id: parseInt(req.params.id),
                     isPublished: true,
                 },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
             });
         } else {
             post = await prisma.post.findUnique({
                 where: {
                     id: parseInt(req.params.id),
+                },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
                 },
             });
         }
@@ -189,6 +227,13 @@ postRouter.get("/:id/comments", checkIdType(), async (req, res) => {
                 postId: parseInt(req.params.id),
                 post: {
                     isPublished: true,
+                },
+            },
+            include: {
+                user: {
+                    select: {
+                        username: true,
+                    },
                 },
             },
         }),

@@ -245,11 +245,25 @@ userRouter.get(
                     userId: parseInt(req.params.id),
                     isPublished: true,
                 },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
             });
         } else {
             posts = await prisma.post.findMany({
                 where: {
                     userId: parseInt(req.params.id),
+                },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
                 },
             });
         }
@@ -262,6 +276,13 @@ userRouter.get("/:id/comments", checkIdType(), async (req, res) => {
     const comments = await prisma.comment.findMany({
         where: {
             userId: parseInt(req.params.id),
+        },
+        include: {
+            user: {
+                select: {
+                    username: true,
+                },
+            },
         },
     });
 

@@ -17,7 +17,17 @@ const commentValidation = body("content")
 const commentRouter = new Router();
 
 commentRouter.get("/", async (req, res) => {
-    return res.status(200).json(await prisma.comment.findMany());
+    return res.status(200).json(
+        await prisma.comment.findMany({
+            include: {
+                user: {
+                    select: {
+                        username: true,
+                    },
+                },
+            },
+        }),
+    );
 });
 
 commentRouter.post(
@@ -59,6 +69,13 @@ commentRouter.get("/:id", checkIdType(), async (req, res) => {
     const comment = await prisma.comment.findUnique({
         where: {
             id: parseInt(req.params.id),
+        },
+        include: {
+            user: {
+                select: {
+                    username: true,
+                },
+            },
         },
     });
 
